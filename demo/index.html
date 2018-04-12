@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+		<title>d2l-selectize-combo demo</title>
+		<script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+		<link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+		<link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+		<link rel="import" href="../d2l-selectize-combo.html">
+		<custom-style>
+			<style is="custom-style" include="demo-pages-shared-styles"></style>
+		</custom-style>
+	</head>
+	<body>
+		<div class="vertical-section-container centered">
+
+			<h3>Simple d2l-selectize-combo</h3>
+			<demo-snippet>
+				<template>
+					<d2l-selectize-combo required placeholder="Select a user" id="first" />
+				</template>
+			</demo-snippet>
+
+			<h3>Disabled d2l-selectize-combo</h3>
+			<demo-snippet>
+				<template>
+					<d2l-selectize-combo disabled />
+				</template>
+			</demo-snippet>
+		</div>
+		<script>
+			let id = 0;
+
+			const data = [
+				{ id: id++, title: `Al Johnson` },
+				{ id: id++, title: `Rob McCyntosh` },
+				{ id: id++, title: `Ryan Sweet` },
+				{ id: id++, title: `The Butcher` },
+				{ id: id++, title: `You've been Ze'luved` },
+				{ id: id++, title: `Jared Bydeley` },
+				{ id: id++, title: `The Awesome` },
+				{ id: id++, title: `Al Johnson` },
+			];
+		
+			const el = document.getElementById('first')
+			const parent = el.parentNode;
+			el.addItems(data);
+			el.remove()
+			parent.appendChild(el)
+		</script>
+	</body>
+</html>

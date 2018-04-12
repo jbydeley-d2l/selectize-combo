@@ -1,0 +1,452 @@
+<link rel="import" href="../polymer/polymer-element.html">
+<link rel="import" href="../d2l-icons/d2l-icon.html">
+<link rel="import" href="../d2l-icons/tier1-icons.html">
+<link rel="import" href="../iron-input/iron-input.html">
+<link rel="import" href="../iron-dropdown/iron-dropdown.html">
+<link rel="import" href="../d2l-colors/d2l-colors.html">
+<link rel="import" href="../d2l-typography/d2l-typography.html">
+<link rel="import" href="../iron-a11y-keys/iron-a11y-keys.html">
+<!--
+'d2l-selectize-combo'
+A searchable dropdown
+
+@demo demo/index.hmtl
+-->
+
+<dom-module id="d2l-selectize-combo">
+	<template>
+		<style>
+			:host {
+				border-radius: 6px;
+				border-style: solid;
+				box-sizing: border-box;
+				display: inline-block;
+				width: 100%;
+				color: var(--d2l-color-ferrite);
+			}
+
+			:host,
+			:host:hover:disabled {
+				background-color: var(--d2l-color-white);
+				border-color: var(--d2l-color-titanius);
+				border-width: 1px;
+				box-shadow: inset 0 2px 0 0 rgba(185, 194, 208, 0.2);
+				padding: 0.3rem;
+			}
+
+			:host:hover,
+			:host:focus,
+			:host([focused]) {
+				border-color: var(--d2l-color-celestine);
+				border-width: 2px;
+				outline-width: 0;
+				padding: -webkit-calc(0.3rem - 1px) -webkit-calc(0.3rem - 1px);
+				padding: calc(0.3rem - 1px) calc(0.3rem - 1px);
+				border-bottom-left-radius: 0;
+				border-bottom-right-radius: 0;
+				border-bottom: none;
+			}
+
+			.dropdown-content {
+				background-color: var(--d2l-color-white);
+				max-height: 150px;
+				min-width: 100px;
+				text-overflow: ellipsis;
+				margin: 0px;
+				padding: 0px;
+				border: 2px solid var(--d2l-color-celestine);
+				border-top: 0;
+				border-bottom-left-radius: 6px;
+				width: 100%;
+			}
+
+			.list {
+				display: flex;
+				flex-direction: column;
+			}
+
+			.list>* {
+				padding: 4px;
+				margin-right: 10px;
+			}
+
+			.selectedValue {
+				align-items: center;
+				background-color: var(--d2l-color-woolonardo);
+				border-radius: 6px;
+				color: var(--d2l-color-ferrite);
+				cursor: pointer;
+				display: flex;
+				margin: 1px 5px 1px 1px;
+				overflow: hidden;
+				padding: 0px 8px;
+				position: relative;
+				text-overflow: ellipsis;
+			}
+
+			.selectedValue:hover {
+				background-color: var(--d2l-color-gypsum);
+			}
+
+			[disabled] d2l-icon {
+				color: rgba(86, 90, 92, 0.5);
+			}
+
+			.selectedValue:focus~.selectedValue>d2l-icon:hover,
+			:host[input-focused]>.content>.selectedValue>d2l-icon:hover,
+			.selectedValue>d2l-icon:hover {
+				color: var(--d2l-color-ferrite);
+			}
+
+			.selectedValue:focus>d2l-icon,
+			.selectedValue:focus>d2l-icon:hover {
+				color: #FFF;
+			}
+
+			.selectize-input {
+				display: inline-block;
+				width: calc(100% - 34px);
+				background: transparent;
+				border: none;
+				outline: 0px;
+				box-shadow: none;
+				box-sizing: border-box;
+				padding: 0px;
+				line-height: 1.4rem;
+			}
+
+			.content {
+				display: flex;
+				flex-wrap: wrap;
+				cursor: text;
+				width: 100%;
+				margin-top: -1px;
+			}
+
+			.iron-input {
+				width: 100%;
+			}
+
+			.dropdown-content {
+				display: block;
+				width: 100%;
+			}
+
+			li {
+				background: #FFF;
+			}
+
+			i {
+				border: solid black;
+				border-width: 0 3px 3px 0;
+				display: inline-block;
+				padding: 3px;
+			}
+
+			.arrow-down {
+				transform: rotate(45deg);
+				-webkit-transform: rotate(45deg);
+			}
+
+			.down-button {
+				display: inline-block;
+				width: 30px;
+				height: 30px;
+				background: transparent;
+				border: none;
+			}
+
+			.down-button:focus {
+				outline: none;
+			}
+
+			.dropdown-item {
+				padding: .3rem;
+			}
+
+			.dropdown-item:hover,
+			.dropdown-item.hover {
+				background-color: rgb(240, 240, 240);
+				cursor: pointer;
+			}
+
+		</style>
+
+		<iron-a11y-keys target="[[_target]]" keys="esc" on-keys-pressed="_blur"></iron-a11y-keys>
+		<iron-a11y-keys target="[[_target]]" keys="down up" on-keys-pressed="_onNavigate"></iron-a11y-keys>
+		<iron-a11y-keys target="[[_target]]" keys="enter" on-keys-pressed="_onEnter"></iron-a11y-keys>
+
+		<iron-input class="iron-input" bind-value="{{_filter}}">
+
+			<input
+				placeholder="[[_placeholder]]"
+				disabled$="[[disabled]]"
+				on-keypress="_resetIndex"
+				class="selectize-input"
+				on-focus="_focus"
+				type="text"
+				/>
+
+			<button tabindex="-1" class="down-button" disabled$="[[disabled]]">
+				<d2l-icon icon="d2l-tier1:arrow-toggle-down"></d2l-icon>
+			</button>
+		</iron-input>
+
+		<iron-dropdown
+			id="dropdown"
+			no-cancel-on-outside-click
+			no-animations
+			no-overlap
+			>
+
+			<ul name="dropdown-content" slot="dropdown-content" class="dropdown-content">
+				<template is="dom-repeat" items="[[_filteredItems]]">
+					<li class$="[[_currentHighlight(index)]]" on-tap="_select" key="[[item.id]]">[[item.title]]</li>
+				</template>
+			</ul>
+
+		</iron-dropdown>
+	</template>
+	<script>
+		class D2lSelectizeCombo extends Polymer.Element {
+			static get is() {
+				return 'd2l-selectize-combo';
+			}
+
+			static get properties() {
+				return {
+					/**
+					 * Disables the control
+					 */
+					disabled: {
+						type: Boolean,
+						reflectToAttribute: true,
+						value: false
+					},
+
+					/**
+					 * Automatically added and removed when the control
+					 * is focused.
+					 */
+					focused: {
+						type: Boolean,
+						reflectToAttribute: true,
+					},
+
+					/**
+					 * The items that the user will be able to search and
+					 * select. Items must have an `id` and `title`
+					 */
+					items: {
+						type: Array,
+						value: [],
+					},
+
+					/**
+					 * The placeholder text shown on the input if no 
+					 * item selected.
+					 */
+					placeholder: {
+						type: String,
+						reflectToAttribute: true,
+						value: 'Select an item'
+					},
+
+					/**
+					 * This signifies that at least one item must be
+					 * chosen at all times.
+					 */
+					required: {
+						type: Boolean,
+						reflectToAttribute: true,
+						value: false,
+					},
+
+					/**
+					 * The item that the user has selected. If `required`
+					 * has been set, this will automatically be the first
+					 * item in the items. Item's must have an `id` and `title`
+					 */
+					selectedItem: {
+						type: Object,
+						value: null,
+					},
+
+					/* Private */
+
+					_currentIndex: {
+						type: Number,
+						value: 0
+					},
+
+					_currentHighlight: {
+						type: Function,
+						computed: '_getCurrentHighlight(_currentIndex)'
+					},
+
+					_filter: {
+						type: String,
+						value: '',
+					},
+
+					_filteredItems: {
+						type: Array,
+						computed: '_getFilteredItems(items, _filter)',
+					},
+
+					_inputTarget: {
+						type: Object,
+					},
+
+					_placeholder: {
+						type: String,
+						computed: '_getPlaceholderText(selectedItem)'
+					},
+
+					_target: {
+						type: Object,
+					}
+				}
+			}
+
+			ready() {
+				super.ready();
+				this._target = this;
+				this._inputTarget = this.shadowRoot.querySelector('input')
+			}
+
+			addItems(items) {
+				this.items = items;
+				if (this.required && this.items.length > 0) {
+					this.selectedItem = this.items[0];
+					this._filter = this.items[0].title;
+				}
+			}
+
+			connectedCallback() {
+				super.connectedCallback();
+				window.addEventListener('blur', this._closeListener.bind(this));
+				window.addEventListener('click', this._closeListener.bind(this));
+			}
+
+			disconnectedCallback() {
+				super.disconnectedCallback();
+				window.removeEventListener('blur', this._closeListener.bind(this));
+				window.removeEventListener('click', this._closeListener.bind(this));
+			}
+
+			_closeListener(e) {
+				const isElementInPath = e.path
+					.some(item => item === this);
+
+				if (!isElementInPath) {
+					this.focused = false;
+					this.$.dropdown.close();
+				}
+			}
+
+			_getPlaceholderText(selectedItem) {
+				if (selectedItem && selectedItem.title) {
+					return selectedItem.title;
+				}
+
+				return this.placeholder;
+			}
+
+			_onNavigate(e) {
+				console.log(e)
+				switch (e.detail.keyboardEvent.key) {
+					case "ArrowDown":
+						if (this._currentIndex < this._filteredItems.length - 1) {
+							this._currentIndex++;
+						}
+						break;
+					case "ArrowUp":
+						if (this._currentIndex > 0) {
+							this._currentIndex--;
+						}
+						break;
+				}
+				let item = this.shadowRoot.querySelector('.hover');
+				if (item) {
+					item.scrollIntoView({
+						behavior: 'smooth'
+					});
+				}
+			}
+
+			_getCurrentHighlight(currentIndex) {
+				return function (index) {
+					if (currentIndex == index) {
+						return 'dropdown-item hover';
+					}
+
+					return 'dropdown-item';
+				}
+			}
+
+			_focus(e) {
+				if (this.disabled) {
+					return;
+				}
+
+				this.focused = true;
+				this._filter = '';
+				
+				this.$.dropdown.style.width = `${this._inputTarget.getBoundingClientRect().width + 46}px`;
+				this.$.dropdown.open();
+			}
+
+			_onEnter(e) {
+				let item = this._filteredItems[this._currentIndex];
+				this._setItem(item);
+			}
+
+			_select(e) {
+				let item = e.model.__data.item;
+				this._setItem(item)
+			}
+
+			_setItem(item) {
+				this.selectedItem = item;
+				this._filter = item.title;
+				this.focused = false;
+				console.log('_setItem is closing the dropdown')
+				this.$.dropdown.close();
+			}
+
+			_blur(e) {
+				console.log("Called _blur")
+				this.focused = false;
+				this._currentIndex = 0;
+			}
+
+			_resetIndex(e) {
+				if (e.key === 'Enter') {
+					return;
+				}
+				if (!this.focused) {
+					this.focused = true;
+					this.$.dropdown.open();
+				}
+				this.$.dropdown.refit();
+				this._currentIndex = 0;
+			}
+
+			_getFilteredItems(items, filter) {
+				const results = this._filter
+					? items.filter(({title}) => title.toLowerCase().includes(filter.toLowerCase()))
+					: items;
+
+				return results.length > 0
+					? results
+					: [{
+						id: '',
+						title: 'No results found'
+					}];
+			}
+		}
+		customElements.define(D2lSelectizeCombo.is, D2lSelectizeCombo);
+
+	</script>
+</dom-module>
